@@ -4,8 +4,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Imports
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api._errors import TranscriptsDisabled
 
-from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -26,12 +27,20 @@ video_id = input("Enter YouTube video ID: ").strip()   # Only the video ID, not 
 
 try:
     # Fetch transcript (English)
-    transcript_list = YouTubeTranscriptApi.get_transcript(video_id,languages=["en"])
+    fetched_transcript = YouTubeTranscriptApi().fetch(
+        video_id,
+        languages=["en"]
+    )
+
     # Convert transcript chunks into plain text
+    transcript_list = fetched_transcript.to_raw_data()
     transcript = " ".join(chunk["text"] for chunk in transcript_list)
 
 except TranscriptsDisabled:
     raise RuntimeError("No captions available for this video.")
+
+except Exception as e:
+    raise RuntimeError(f"Invalid video ID or transcript fetch failed: {e}")
 
 
 # Step 1b - Indexing (Text Splitting / Chunking)
